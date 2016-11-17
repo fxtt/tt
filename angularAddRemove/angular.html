@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="js/angular.js"></script>
+	<script type="text/javascript" src="js/angular-route.min.js"></script>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<style type="text/css">
+		*{
+			margin: 0;
+			padding: 0;
+		}
+		.container{
+			margin-top: 100px;
+		}
+		table{
+			table-layout: fixed;
+		}
+	</style>
+</head>
+<body ng-app="myapp">
+	<div class="container" ng-controller="firstContro">
+		<div class="form-group form-inline pull-left">
+			<select name="" id="" value="" class="form-control" ng-model="inputVal2" >
+				<option value="id">序列</option>
+				<option value="book">书名</option>
+				<option value="author">作者</option>
+			</select>
+			<input type="text" class="form-control" placeholder="搜索" ng-model="inputVal">
+		</div>
+		<form class="form-group form-inline pull-right">
+			<input type="text" class="form-control " placeholder="书名" required ng-model="book" id="book">
+			<input type="text" class="form-control author" placeholder="作者" required ng-model="author" id="author">
+			<button type="submit" class="btn btn-primary" ng-click="add()">新增</button>
+		</form>
+		<table class="table table-hover table-striped">
+			<thead>
+				<tr>
+					<th>序号</th>
+					<th>书名</th>
+					<th>作者</th>
+					<th>编辑</th>
+					<th>删除</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr ng-repeat="x in objs | filter:typeFun() | orderBy:inputVal2">
+					<td>{{x.id}}</td>
+					<td>
+						<p ng-show="state">{{x.book}}</p>
+						<input type="text" ng-hide="state" ng-model="x.book" >
+					</td>
+					<td>
+						<p ng-show="state">{{x.author}}</p>
+						<input type="text" ng-hide="state" ng-model="x.author">
+					</td>
+					<td><a href="javascript:void(0)" ng-click=modify()>{{eidt}}</a></td>
+					<td><a href="javascript:void(0)" ng-click="delete()">删除</a></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</body>
+<script type="text/javascript">
+	var app=angular.module("myapp",[]);
+	//创建服务
+	app.factory("server",["$http",function ($http) {
+	  return  function (type,id,book,author,fn) {
+			$http.get("demo1.php",{params:{"type":type,"id":id,"bookname":book,"authorname":author}}).success(function (a) {
+					fn(a);
+				}).error(function (a) {
+
+				})
+		}
+	}]);
+	app.controller("firstContro",["$scope","server",function ($scope,server) {
+		var num=0;
+		//添加
+		$scope.add=function () {
+			if (this.book&&this.author) {
+				server("addbooks",num++,this.book,this.author,function(data){
+						$scope.objs=data;
+					}
+				);				
+				this.book="";
+				this.author="";
+								
+			}else{
+				return;
+			}	
+		};
+		//查询
+		$scope.inputVal2="id";
+		$scope.typeFun=function () {
+			return {[this.inputVal2]:this.inputVal};
+		}
+		//刷新加载
+		$scope.loadbooks=function () {
+			server("checkbooks",num++,this.book,this.author,function(data){
+					$scope.objs=data;
+				});				
+
+			}
+		$scope.loadbooks();
+	//删除
+		$scope.delete=function () {
+			server("delete","",this.x.book,"",function(data){
+					$scope.objs=data;
+				});				
+			
+		}
+		//修改
+		$scope.state=true;
+		$scope.eidt="编辑";
+		$scope.modify=function () {
+			if (this.state) {
+				this.state=false;
+				this.eidt="保存";
+			}else{
+			server("modify",this.x.id,this.x.book,this.x.author,function(data){
+					$scope.objs=data;
+				});				
+				this.state=true;
+				this.eidt="编辑";
+			}
+		}
+
+	}]);
+
+
+</script>
+</html>
